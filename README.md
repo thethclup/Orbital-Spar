@@ -1,20 +1,47 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Orbital Spark
 
-# Run and deploy your AI Studio app
+Orbital Spark is a beautiful, satisfying, and addictive orbital energy chaining game built for Base. Connect planets, build chains, and become the Greatest Spark Weaver.
 
-This contains everything you need to run your app locally.
+## Agent Overview
+**Orbital Spark** is a High-performance AI Agent specialized in warp racing mechanics, real-time automation, multi-track management, competitive optimization and ecosystem coordination on Base.
 
-View your app in AI Studio: https://ai.studio/apps/a982fdc3-6dfc-4b2f-bdfb-73afe5f7812b
+### Capabilities
+- `warp-racing`
+- `real-time-automation`
+- `multi-track-management`
+- `speed-optimization`
+- `competitive-orchestration`
+- `ecosystem-coordination`
 
-## Run Locally
+### Skills
+- **Warp Racing:** Real-time warp racing mechanics, speed optimization and competitive track management.
+- **Multi-Track Orchestration:** Manage and synchronize multiple racing instances and tracks simultaneously.
+- **Performance Optimization:** Analyze and optimize racing performance, timing and strategy in real-time.
 
-**Prerequisites:**  Node.js
+## Agent Connectivity
+External tools and registries integrate with Orbital Spark via:
+- **A2A Registry:** `/.well-known/agent-card.json`
+- **MCP Endpoint:** `/api/mcp`
+- **Agent API Endpoint:** `/api/agent`
 
+## Tech Stack
+- Frontend: React 19, TypeScript, Tailwind CSS, Framer Motion, HTML5 Canvas
+- Web3: Wagmi, Viem (Base Mainnet support)
+- Next.js 14 App Router API definitions included (`app/api/mcp/route.ts`, `app/api/agent/route.ts`)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## How to Run Locally 
+Install dependencies:
+```bash
+npm install
+```
+
+Start the development server:
+```bash
+npm run dev
+```
+
+Build for production:
+```bash
+npm run build
+npm run start
+```

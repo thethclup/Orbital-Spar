@@ -9,6 +9,17 @@ async function startServer() {
   // Middleware to parse JSON
   app.use(express.json());
 
+  // CORS Middleware for external validators (A2A, MCP, Agent Cards)
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   // API endpoints
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
@@ -20,16 +31,29 @@ async function startServer() {
       status: "success",
       tools: [
         {
-          name: "calculate_warp_trajectory",
-          description: "Calculates the optimal warp trajectory for the current orbital resonance.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              targetBody: { type: "string" },
-              speed: { type: "number" }
-            },
-            required: ["targetBody", "speed"]
-          }
+          name: "get_race_status",
+          description: "Gets the current status of the warp race.",
+          inputSchema: { type: "object", properties: { raceId: { type: "string" } }, required: ["raceId"] }
+        },
+        {
+          name: "start_race",
+          description: "Starts a new warp race session.",
+          inputSchema: { type: "object", properties: { trackId: { type: "string" } }, required: ["trackId"] }
+        },
+        {
+          name: "get_leaderboard",
+          description: "Retrieves the leaderboard for a specific track.",
+          inputSchema: { type: "object", properties: { trackId: { type: "string" } }, required: ["trackId"] }
+        },
+        {
+          name: "optimize_speed",
+          description: "Calculates optimal warp speed parameters.",
+          inputSchema: { type: "object", properties: { currentSpeed: { type: "number" } }, required: ["currentSpeed"] }
+        },
+        {
+          name: "get_track_info",
+          description: "Fetches details and constraints for a given race track.",
+          inputSchema: { type: "object", properties: { trackId: { type: "string" } }, required: ["trackId"] }
         }
       ],
       prompts: [
