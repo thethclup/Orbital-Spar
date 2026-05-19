@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 
 async function startServer() {
@@ -18,6 +19,25 @@ async function startServer() {
       return res.sendStatus(200);
     }
     next();
+  });
+
+  // Root wildcard for CORS for MCP testing explicitly
+  app.options("*", (req, res) => {
+    res.sendStatus(200);
+  });
+
+  // Specifically serve .well-known explicitly
+  app.get("/.well-known/agent-card.json", (req, res) => {
+    const publicPath = path.join(process.cwd(), "public", ".well-known", "agent-card.json");
+    const distPath = path.join(process.cwd(), "dist", ".well-known", "agent-card.json");
+    
+    if (fs.existsSync(publicPath)) {
+      res.sendFile(publicPath);
+    } else if (fs.existsSync(distPath)) {
+      res.sendFile(distPath);
+    } else {
+      res.status(404).json({ error: "agent-card.json not found" });
+    }
   });
 
   // API endpoints
