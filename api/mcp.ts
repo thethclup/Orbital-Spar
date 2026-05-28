@@ -1,5 +1,5 @@
 // Vercel Serverless Function format for /api/mcp
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -15,7 +15,7 @@ export default function handler(req: any, res: any) {
     if (body?.method === "tools/list") {
       return res.status(200).json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           tools: [
             {
@@ -51,7 +51,7 @@ export default function handler(req: any, res: any) {
     if (body?.method === "prompts/list") {
       return res.status(200).json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           prompts: [
             { name: "analyze_orbit", description: "Analyze orbital constraints" }
@@ -63,7 +63,7 @@ export default function handler(req: any, res: any) {
     if (body?.method === "resources/list") {
       return res.status(200).json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           resources: [
             { uri: "file:///config/warp_params.json", name: "Warp Parameters", description: "Static configuration for warp speeds" }

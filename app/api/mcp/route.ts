@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     if (body.method === "tools/list") {
       return NextResponse.json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           tools: [
             {
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     if (body.method === "prompts/list") {
       return NextResponse.json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           prompts: [
             { name: "analyze_orbit", description: "Analyze orbital constraints" }
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
     if (body.method === "resources/list") {
       return NextResponse.json({
         jsonrpc: "2.0",
-        id: body.id,
+        id: body.id || 1,
         result: {
           resources: [
             { uri: "file:///config/warp_params.json", name: "Warp Parameters", description: "Static configuration for warp speeds" }
