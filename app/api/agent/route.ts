@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   return NextResponse.json({
     status: "online",
-    name: "Orbital Spark Agent",
+    name: "Orbital Spark",
     version: "1.0.0"
   }, {
     headers: {

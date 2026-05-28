@@ -27,7 +27,7 @@ External tools and registries integrate with Orbital Spark via:
 ## Tech Stack
 - Frontend: React 19, TypeScript, Tailwind CSS, Framer Motion, HTML5 Canvas
 - Web3: Wagmi, Viem (Base Mainnet support)
-- Next.js 14 App Router API definitions included (`app/api/mcp/route.ts`, `app/api/agent/route.ts`)
+- API Support: Next.js 14 App Router API definitions included (`app/api/mcp/route.ts`, `app/api/agent/route.ts`)
 
 ## How to Run Locally 
 Install dependencies:

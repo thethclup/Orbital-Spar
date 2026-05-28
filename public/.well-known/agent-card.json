@@ -28,17 +28,17 @@
     {
       "name": "A2A",
       "version": "1.0.0",
-      "endpoint": "https://ais-pre-utqo7sbfkv7xeagcctia7c-564665804356.europe-west2.run.app/.well-known/agent-card.json"
+      "endpoint": "https://orbitalsparks.vercel.app/.well-known/agent-card.json"
     },
     {
       "name": "MCP",
       "version": "1.0.0",
-      "endpoint": "https://ais-pre-utqo7sbfkv7xeagcctia7c-564665804356.europe-west2.run.app/api/mcp"
+      "endpoint": "https://orbitalsparks.vercel.app/api/mcp"
     },
     {
       "name": "API",
       "version": "1.0.0",
-      "endpoint": "https://ais-pre-utqo7sbfkv7xeagcctia7c-564665804356.europe-west2.run.app/api/agent"
+      "endpoint": "https://orbitalsparks.vercel.app/api/agent"
     }
   ],
   "capabilities": [
