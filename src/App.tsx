@@ -6,6 +6,9 @@ import { GameScreen } from './screens/GameScreen';
 import { GameOverScreen } from './screens/GameOverScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { AnimatePresence } from 'motion/react';
+import { useAccount, useConnect, useDisconnect, useSendTransaction } from 'wagmi';
+import { parseEther } from 'viem';
+import { Sun } from 'lucide-react';
 
 function GameRouter() {
   const { screen } = useGameStore();
@@ -25,11 +28,21 @@ function GameRouter() {
   );
 }
 
-export default function App() {
-  const { score } = useGameStore();
+function MainLayout({ score }: { score: number }) {
+  const { isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { sendTransaction } = useSendTransaction();
+
+  const sendGMTransaction = () => {
+    sendTransaction({
+      to: '0xc35B9997B63B1CE14f8F513f7eddD9a7ABbB33d7',
+      value: parseEther('0'),
+      data: '0x'
+    });
+  };
 
   return (
-    <Web3Provider>
       <div className="w-full h-screen bg-[#050508] text-[#F0F0F0] font-sans flex flex-col overflow-hidden selection:bg-[#00f5ff] selection:text-black">
         {/* TOP NAVIGATION BAR */}
         <nav className="flex justify-between items-center py-4 px-6 md:py-6 md:px-10 border-b border-white/10 shrink-0 relative z-20 bg-[#050508]">
@@ -38,8 +51,29 @@ export default function App() {
             <span className="text-[10px] uppercase tracking-[0.3em] font-semibold opacity-40">Base Mainnet Connected</span>
           </div>
           <div className="flex gap-4 md:gap-6 items-center">
-            <button className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors">Connect Wallet</button>
-            <button className="bg-[#00f5ff] text-black text-[11px] font-bold uppercase tracking-[0.2em] px-5 py-2 rounded-full hover:opacity-90">Say GM</button>
+            {isConnected ? (
+              <>
+                <button 
+                  onClick={sendGMTransaction}
+                  className="px-3 py-2 rounded-lg bg-[#E8A020]/20 hover:bg-[#E8A020]/30 border border-[#E8A020]/40 text-[#E8A020] transition-colors flex items-center gap-2 font-['Cinzel'] text-xs font-bold"
+                >
+                  <Sun size={14} />
+                  Say GM
+                </button>
+                <button onClick={() => disconnect()} className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors">Disconnect</button>
+              </>
+            ) : (
+              <button 
+                onClick={() => {
+                  const injected = connectors.find(c => c.id === 'injected');
+                  if (injected) connect({ connector: injected });
+                }} 
+                className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
+               >
+                 Connect Wallet
+               </button>
+            )}
+            {!isConnected && <button className="bg-[#00f5ff] text-black text-[11px] font-bold uppercase tracking-[0.2em] px-5 py-2 rounded-full hover:opacity-90">Say GM</button>}
           </div>
         </nav>
 
@@ -129,6 +163,15 @@ export default function App() {
           </div>
         </footer>
       </div>
+  );
+}
+
+export default function App() {
+  const { score } = useGameStore();
+
+  return (
+    <Web3Provider>
+      <MainLayout score={score} />
     </Web3Provider>
   );
 }
