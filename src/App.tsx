@@ -35,10 +35,15 @@ function MainLayout({ score }: { score: number }) {
   const { sendTransaction } = useSendTransaction();
 
   const sendGMTransaction = () => {
+    // ERC-8021 On-Chain Attribution
+    // Replace this payload to include your actual [ATTRIBUTION_CODE] and [BUILDER_CODE]
+    // Default Base Builder App suffix:
+    const dataSuffix = '0x07626173656170700080218021802180218021802180218021' as `0x${string}`;
+
     sendTransaction({
       to: '0xc35B9997B63B1CE14f8F513f7eddD9a7ABbB33d7',
       value: parseEther('0'),
-      data: '0x'
+      data: dataSuffix
     });
   };
 
