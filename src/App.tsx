@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Web3Provider } from './providers/Web3Provider';
 import { useGameStore } from './store/gameStore';
 import { TitleScreen } from './screens/TitleScreen';
@@ -6,9 +6,22 @@ import { GameScreen } from './screens/GameScreen';
 import { GameOverScreen } from './screens/GameOverScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { AnimatePresence } from 'motion/react';
-import { useAccount, useConnect, useDisconnect, useSendTransaction } from 'wagmi';
+import {
+  useAccount,
+  useBlockNumber,
+  useConnect,
+  useDisconnect,
+  useSendTransaction,
+  useSwitchChain,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
+import { base } from 'wagmi/chains';
 import { parseEther } from 'viem';
 import { Sun } from 'lucide-react';
+import {
+  BASE_BUILDER_DATA_SUFFIX,
+  GM_RECEIVER_ADDRESS,
+} from './lib/baseDenim';
 
 function GameRouter() {
   const { screen } = useGameStore();
@@ -29,22 +42,73 @@ function GameRouter() {
 }
 
 function MainLayout({ score }: { score: number }) {
-  const { isConnected } = useAccount();
+  const { isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const { sendTransaction } = useSendTransaction();
-
-  const sendGMTransaction = () => {
-    // ERC-8021 On-Chain Attribution
-    // Replace this payload to include your actual [ATTRIBUTION_CODE] and [BUILDER_CODE]
-    // Default Base Builder App suffix:
-    const dataSuffix = '0x07626173656170700080218021802180218021802180218021' as `0x${string}`;
-
-    sendTransaction({
-      to: '0xc35B9997B63B1CE14f8F513f7eddD9a7ABbB33d7',
-      value: parseEther('0'),
-      data: dataSuffix
+  const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
+  const {
+    data: gmTxHash,
+    sendTransactionAsync,
+    isPending: isSendingGm,
+  } = useSendTransaction();
+  const { isLoading: isConfirmingGm, isSuccess: isGmConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: gmTxHash,
+      chainId: base.id,
     });
+  const { data: canonicalBlock } = useBlockNumber({
+    chainId: base.id,
+    watch: true,
+  });
+  const [gmNotice, setGmNotice] = useState<string>('');
+
+  const isWrongChain = isConnected && chainId !== base.id;
+
+  useEffect(() => {
+    if (isGmConfirmed) {
+      setGmNotice('GM confirmed on Base');
+      const timer = setTimeout(() => setGmNotice(''), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [isGmConfirmed]);
+
+  const handleConnect = () => {
+    const injectedConnector = connectors.find((c) => c.id === 'injected') ?? connectors[0];
+    if (injectedConnector) {
+      connect({ connector: injectedConnector, chainId: base.id });
+    }
+  };
+
+  const handleSwitchToBase = async () => {
+    try {
+      await switchChainAsync({ chainId: base.id });
+    } catch {
+      setGmNotice('Switch to Base rejected');
+      setTimeout(() => setGmNotice(''), 3000);
+    }
+  };
+
+  const sendGMTransaction = async () => {
+    if (!isConnected) {
+      handleConnect();
+      return;
+    }
+
+    try {
+      setGmNotice('');
+      if (chainId !== base.id) {
+        await switchChainAsync({ chainId: base.id });
+      }
+      await sendTransactionAsync({
+        chainId: base.id,
+        to: GM_RECEIVER_ADDRESS,
+        value: parseEther('0'),
+        data: BASE_BUILDER_DATA_SUFFIX,
+      });
+    } catch {
+      setGmNotice('Transaction cancelled');
+      setTimeout(() => setGmNotice(''), 3000);
+    }
   };
 
   return (
@@ -53,32 +117,54 @@ function MainLayout({ score }: { score: number }) {
         <nav className="flex justify-between items-center py-4 px-6 md:py-6 md:px-10 border-b border-white/10 shrink-0 relative z-20 bg-[#050508]">
           <div className="flex items-center gap-4 md:gap-8">
             <span className="text-[10px] uppercase tracking-[0.3em] font-semibold text-[#00f5ff] hidden sm:block">System // 1.0.4</span>
-            <span className="text-[10px] uppercase tracking-[0.3em] font-semibold opacity-40">Base Mainnet Connected</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-semibold opacity-60">
+              Base Mainnet // 200ms{canonicalBlock ? ` #${canonicalBlock.toString()}` : ''}
+            </span>
           </div>
           <div className="flex gap-4 md:gap-6 items-center">
+            {gmNotice && (
+              <span className="hidden md:inline text-[10px] uppercase tracking-[0.2em] text-[#00f5ff] font-mono">
+                {gmNotice}
+              </span>
+            )}
             {isConnected ? (
               <>
-                <button 
-                  onClick={sendGMTransaction}
-                  className="px-3 py-2 rounded-lg bg-[#E8A020]/20 hover:bg-[#E8A020]/30 border border-[#E8A020]/40 text-[#E8A020] transition-colors flex items-center gap-2 font-['Cinzel'] text-xs font-bold"
-                >
-                  <Sun size={14} />
-                  Say GM
-                </button>
+                {isWrongChain ? (
+                  <button
+                    onClick={handleSwitchToBase}
+                    disabled={isSwitching}
+                    className="px-3 py-2 rounded-lg bg-[#ff00ff]/20 hover:bg-[#ff00ff]/30 border border-[#ff00ff]/40 text-[#ff00ff] transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-50"
+                  >
+                    {isSwitching ? 'Switching...' : 'Switch to Base'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={sendGMTransaction}
+                    disabled={isSendingGm || isConfirmingGm}
+                    className="px-3 py-2 rounded-lg bg-[#E8A020]/20 hover:bg-[#E8A020]/30 border border-[#E8A020]/40 text-[#E8A020] transition-colors flex items-center gap-2 font-['Cinzel'] text-xs font-bold disabled:opacity-50"
+                  >
+                    <Sun size={14} />
+                    {isSendingGm ? 'Signing...' : isConfirmingGm ? 'Confirming...' : 'Say GM'}
+                  </button>
+                )}
                 <button onClick={() => disconnect()} className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors">Disconnect</button>
               </>
             ) : (
-              <button 
-                onClick={() => {
-                  const injected = connectors.find(c => c.id === 'injected');
-                  if (injected) connect({ connector: injected });
-                }} 
-                className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
-               >
-                 Connect Wallet
-               </button>
+              <>
+                <button
+                  onClick={handleConnect}
+                  className="hidden sm:block text-[11px] uppercase tracking-[0.2em] px-4 py-2 border border-white/20 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  Connect Wallet
+                </button>
+                <button
+                  onClick={sendGMTransaction}
+                  className="bg-[#00f5ff] text-black text-[11px] font-bold uppercase tracking-[0.2em] px-5 py-2 rounded-full hover:opacity-90 transition-opacity"
+                >
+                  Say GM
+                </button>
+              </>
             )}
-            {!isConnected && <button className="bg-[#00f5ff] text-black text-[11px] font-bold uppercase tracking-[0.2em] px-5 py-2 rounded-full hover:opacity-90">Say GM</button>}
           </div>
         </nav>
 

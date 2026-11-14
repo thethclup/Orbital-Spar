@@ -1,28 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { useGameStore } from '../store/gameStore';
-import { Button } from '../components/ui/Button';
-import { withAttribution } from '../lib/erc8021/attribution';
 
 export const TitleScreen: React.FC = () => {
   const { setScreen, setScore } = useGameStore();
-  const [gmStatus, setGmStatus] = useState<string>('');
-
-  const handleSayGM = async () => {
-    setGmStatus('Pending tx...');
-    try {
-      // Simulate Wagmi/Viem sendTransaction on Base Mainnet
-      const dataPayload = withAttribution('0x474d'); // "GM"
-      console.log('Sending transaction with payload:', dataPayload);
-      
-      // Fake delay
-      await new Promise(r => setTimeout(r, 2000));
-      setGmStatus('GM recorded on Base!');
-      setTimeout(() => setGmStatus(''), 3000);
-    } catch (e) {
-      setGmStatus('Failed');
-    }
-  };
 
   return (
     <motion.div 
@@ -72,10 +53,6 @@ export const TitleScreen: React.FC = () => {
         >
           Leaderboard
         </button>
-        
-        <div className="mt-4 pt-4 flex flex-col items-center gap-3 w-full">
-          {gmStatus && <span className="text-xs text-[#00f5ff] font-mono">{gmStatus}</span>}
-        </div>
       </motion.div>
     </motion.div>
   );

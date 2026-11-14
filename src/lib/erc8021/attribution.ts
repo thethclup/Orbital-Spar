@@ -1,4 +1,4 @@
-import { encodePacked, toHex, stringToHex } from 'viem';
+import { stringToHex } from 'viem';
 
 /**
  * ERC-8021: Transaction Attribution & Builder Codes

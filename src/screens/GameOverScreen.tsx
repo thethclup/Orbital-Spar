@@ -1,24 +1,80 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useGameStore } from '../store/gameStore';
+import {
+  useAccount,
+  useConnect,
+  useSendTransaction,
+  useSwitchChain,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
+import { base } from 'wagmi/chains';
+import { parseEther, stringToHex } from 'viem';
+import { withAttribution } from '../lib/erc8021/attribution';
+import { BASE_EXPLORER_URL, GM_RECEIVER_ADDRESS } from '../lib/baseDenim';
 
 export const GameOverScreen: React.FC = () => {
   const { score, resetGame, setScreen, longestChain, setLongestChain } = useGameStore();
   const [recordStatus, setRecordStatus] = useState<string>('');
+  const { isConnected, chainId } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { switchChainAsync } = useSwitchChain();
+  const {
+    data: txHash,
+    sendTransactionAsync,
+    isPending: isSending,
+  } = useSendTransaction();
+  const {
+    data: receipt,
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+    chainId: base.id,
+  });
 
-  if (score > longestChain) {
-    setLongestChain(score);
-  }
+  useEffect(() => {
+    if (score > longestChain) {
+      setLongestChain(score);
+    }
+  }, [score, longestChain, setLongestChain]);
+
+  useEffect(() => {
+    if (isConfirming) {
+      setRecordStatus('Confirming in 200ms block...');
+    } else if (isConfirmed && receipt) {
+      setRecordStatus(`Recorded in Base block #${receipt.blockNumber.toString()}`);
+    }
+  }, [isConfirming, isConfirmed, receipt]);
 
   const handleRecordScore = async () => {
-    setRecordStatus('Requesting SIWE Signature...');
+    if (!isConnected) {
+      const injectedConnector = connectors.find((c) => c.id === 'injected') ?? connectors[0];
+      if (injectedConnector) {
+        setRecordStatus('Connecting wallet...');
+        connect({ connector: injectedConnector, chainId: base.id });
+      } else {
+        setRecordStatus('No Web3 wallet detected');
+      }
+      return;
+    }
+
     try {
-      await new Promise(r => setTimeout(r, 1500));
-      setRecordStatus('Submitting to Base...');
-      await new Promise(r => setTimeout(r, 1500));
-      setRecordStatus('Chain Recorded Successfully!');
-    } catch (e) {
-      setRecordStatus('Signature Rejected');
+      if (chainId !== base.id) {
+        setRecordStatus('Switching to Base Mainnet...');
+        await switchChainAsync({ chainId: base.id });
+      }
+
+      setRecordStatus('Confirm transaction in wallet...');
+      const payload = withAttribution(stringToHex(`ORBITAL_SPARK:SCORE:${score}`));
+      await sendTransactionAsync({
+        chainId: base.id,
+        to: GM_RECEIVER_ADDRESS,
+        value: parseEther('0'),
+        data: payload,
+      });
+    } catch {
+      setRecordStatus('Transaction rejected');
     }
   };
 
@@ -45,11 +101,32 @@ export const GameOverScreen: React.FC = () => {
         <div className="flex flex-col gap-4 relative z-10 items-center">
           <button 
             onClick={handleRecordScore}
-            className="px-10 py-4 w-full bg-white text-black font-bold text-xs uppercase tracking-[0.4em] transform hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+            disabled={isSending || isConfirming}
+            className="px-10 py-4 w-full bg-white text-black font-bold text-xs uppercase tracking-[0.4em] transform hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50"
           >
-            Record Orbit On-Chain
+            {isSending
+              ? 'Signing...'
+              : isConfirming
+                ? 'Confirming...'
+                : isConnected
+                  ? 'Record Orbit On-Chain'
+                  : 'Connect & Record On Base'}
           </button>
-          {recordStatus && <p className="text-[10px] text-[#00f5ff] font-mono mt-1 uppercase">{recordStatus}</p>}
+          {recordStatus && (
+            <p className="text-[10px] text-[#00f5ff] font-mono mt-1 uppercase">
+              {recordStatus}
+            </p>
+          )}
+          {txHash && isConfirmed && (
+            <a
+              href={`${BASE_EXPLORER_URL}/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] uppercase tracking-[0.2em] text-white/60 underline hover:text-white"
+            >
+              View on BaseScan
+            </a>
+          )}
           
           <button 
             onClick={() => resetGame()} 
